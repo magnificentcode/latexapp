@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import ALLOWED_ORIGINS
 from app.db.session import init_models
 from app.middleware.auth import AuthMiddleware
-from app.routes import auth, documents, health, pages
+from app.routes import auth, documents, health, math, pages
 from app.routes import compile as compile_routes
 
 logging.basicConfig(level=logging.INFO)
@@ -37,6 +37,7 @@ app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(documents.router)
 app.include_router(compile_routes.router)
+app.include_router(math.router)
 
 # Registered last on purpose: it has a catch-all GET /{page} route that
 # would otherwise shadow every other GET route declared after it.

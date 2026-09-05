@@ -4,10 +4,3 @@ __pycache__/
 venv/
 .env
 .DS_Store
-
-node_modules/
-frontend/latexeditor/dist/
-static/editor.bundle.js
-static/editor.bundle.js.map
-static/editor.bundle.css
-static/katex-fonts/

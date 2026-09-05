@@ -1,15 +1,4 @@
 # syntax=docker/dockerfile:1
-
-# --- Stage 1: build the editor's React/Vite bundle -------------------------
-FROM node:20-slim AS frontend-build
-WORKDIR /repo
-COPY frontend/latexeditor/package.json frontend/latexeditor/package-lock.json* ./frontend/latexeditor/
-RUN cd frontend/latexeditor && npm install
-COPY frontend/latexeditor ./frontend/latexeditor
-RUN cd frontend/latexeditor && npm run build
-# vite.config.js's outDir ("../../static") resolves to /repo/static here.
-
-# --- Stage 2: the FastAPI app ------------------------------------------------
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -58,7 +47,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
 COPY static ./static
-COPY --from=frontend-build /repo/static ./static
 
 EXPOSE 8080
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

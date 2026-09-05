@@ -1,0 +1,124 @@
+.editor-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-6);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: relative;
+  /* Above the rich-text editor's own floating toolbar (data-testid=
+     "toolbar", position:fixed;top:0;z-index:10) so Save/Compile stay
+     reachable — see the [data-testid='toolbar'] override below, which
+     pushes that toolbar down to start below this header instead. */
+  z-index: 11;
+}
+
+.editor-back {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.editor-title-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text);
+  min-width: 0;
+  padding: var(--space-1) 0;
+}
+
+.editor-title-input:focus {
+  outline: none;
+}
+
+.editor-save-status {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* The library's floating toolbar (shown while the answer box is focused)
+   is `position: fixed; top: 0`, which would otherwise sit on top of and
+   swallow clicks meant for our own header/Save/Compile buttons above it —
+   push it down to start below our header instead. Stable selector: every
+   version of the toolbar carries this test id regardless of its
+   styled-components class name. */
+[data-testid='toolbar'] {
+  top: 62px !important;
+}
+
+#rich-text-editor-root {
+  max-width: 780px;
+  /* Clears the header (62px) plus the toolbar's own height when open. */
+  margin: 150px auto var(--space-8);
+  padding: 0 var(--space-4);
+}
+
+/* The library ships its own fallback-less styling for the answer box; this
+   just gives it a bit more breathing room and a document-like feel. */
+#rich-text-editor-root [data-testid='rich-text-editor'] {
+  min-height: 60vh;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.fallback-editor {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font: 17px 'Times New Roman', serif;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.compile-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(60vw, 720px);
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+}
+
+.compile-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  gap: var(--space-3);
+}
+
+.compile-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.compile-pdf-frame {
+  flex: 1;
+  border: none;
+}
+
+.compile-log {
+  flex: 1;
+  margin: 0;
+  padding: var(--space-4);
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--danger);
+  background: var(--danger-tint);
+  white-space: pre-wrap;
+}

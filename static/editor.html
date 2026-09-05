@@ -4,14 +4,38 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Editor — latexapp</title>
-  <link rel="stylesheet" href="/static/editor.bundle.css" />
+  <link rel="stylesheet" href="https://unpkg.com/mathquill@0.10.1/build/mathquill.css" />
+  <link rel="stylesheet" href="/static/css/design-system.css" />
+  <link rel="stylesheet" href="/static/css/editor.css" />
 </head>
 <body>
-  <div id="latex-editor-root"></div>
-  <script>
-    document.getElementById('latex-editor-root').dataset.documentId =
-      new URLSearchParams(location.search).get('id') || '';
-  </script>
-  <script type="module" src="/static/editor.bundle.js"></script>
+  <header class="editor-header">
+    <a href="/dashboard" class="editor-back">← Documents</a>
+    <input type="text" id="title-input" class="editor-title-input" placeholder="Untitled" />
+    <span id="save-status" class="editor-save-status">Loading…</span>
+    <button id="save-btn" class="btn btn-secondary">Save</button>
+    <button id="compile-btn" class="btn">Compile to PDF</button>
+  </header>
+
+  <div id="rich-text-editor-root"></div>
+
+  <div id="compile-panel" class="compile-panel" hidden>
+    <div class="compile-panel-header">
+      <strong id="compile-panel-title">Compiled PDF</strong>
+      <div class="compile-panel-actions">
+        <a id="compile-open-tab" href="#" target="_blank" rel="noreferrer">Open in new tab</a>
+        <a id="compile-download" href="#" download="document.pdf">Download</a>
+        <button id="compile-close-btn" class="btn btn-secondary">Close</button>
+      </div>
+    </div>
+    <iframe id="compile-pdf-frame" class="compile-pdf-frame" title="Compiled PDF" hidden></iframe>
+    <pre id="compile-log" class="compile-log" hidden></pre>
+  </div>
+
+  <!-- Digabi rich-text-editor (official CDN), pinned — the v8 rewrite
+       changed the API from earlier versions, so an unpinned "latest"
+       could silently break this integration later. -->
+  <script type="module" src="https://unpkg.com/rich-text-editor@8.9.0/dist/rich-text-editor-bundle.js"></script>
+  <script type="module" src="/static/js/editor.js"></script>
 </body>
 </html>
