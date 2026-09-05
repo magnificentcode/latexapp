@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My documents — latexapp</title>
+  <link rel="stylesheet" href="/static/css/design-system.css" />
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+</head>
+<body>
+  <header class="dashboard-header">
+    <h1>latexapp</h1>
+    <button id="logout-btn" class="btn btn-secondary">Log out</button>
+  </header>
+  <main class="dashboard-main">
+    <div class="dashboard-toolbar">
+      <button id="new-doc-btn" class="btn">+ New document</button>
+    </div>
+    <div id="doc-list" class="doc-list"></div>
+    <div id="empty-state" class="empty-state" style="display: none">
+      No documents yet — create your first one above.
+    </div>
+  </main>
+  <script src="/static/js/dashboard-auth.js"></script>
+</body>
+</html>

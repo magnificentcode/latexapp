@@ -1,0 +1,75 @@
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-8);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.dashboard-header h1 {
+  font-size: var(--text-lg);
+  margin: 0;
+}
+
+.dashboard-main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-4);
+}
+
+.dashboard-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-4);
+}
+
+.doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.doc-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color 0.15s ease;
+}
+
+.doc-item:hover {
+  border-color: var(--border-strong);
+}
+
+.doc-item .doc-title {
+  font-weight: 600;
+}
+
+.doc-item .doc-updated {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.doc-item .doc-delete {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  background: none;
+  border: none;
+  padding: var(--space-1) var(--space-2);
+}
+
+.doc-item .doc-delete:hover {
+  color: var(--danger);
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: var(--space-8) 0;
+}
