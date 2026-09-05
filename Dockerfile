@@ -6,9 +6,15 @@ ENV PYTHONUNBUFFERED=1
 ENV XDG_CACHE_HOME=/var/cache/latexapp
 RUN mkdir -p /var/cache/latexapp
 
+# tectonic's runtime shared-library deps (per its own docs: fontconfig,
+# freetype2, graphite2, harfbuzz, ICU4C, libpng, zlib, openssl) — the ICU
+# runtime package is version-numbered per Debian release (e.g. libicu72 on
+# bookworm), so libicu-dev is used here instead of guessing the exact
+# number; it pulls in whatever runtime .so the base image's release needs.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential libffi-dev libssl-dev python3-dev gcc \
     curl ca-certificates \
+    libfontconfig1 libfreetype6 libgraphite2-3 libharfbuzz0b libpng16-16 libicu-dev zlib1g \
     && rm -rf /var/lib/apt/lists/*
 
 # --- tectonic: pinned release binary, checksum-verified ---
