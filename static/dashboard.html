@@ -4,20 +4,26 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>My documents — latexapp</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
   <link rel="stylesheet" href="/static/css/design-system.css" />
   <link rel="stylesheet" href="/static/css/dashboard.css" />
 </head>
 <body>
   <header class="dashboard-header">
-    <h1>latexapp</h1>
+    <span class="brand"><span class="brand-mark">&#8747;</span>latexapp</span>
     <button id="logout-btn" class="btn btn-secondary">Log out</button>
   </header>
   <main class="dashboard-main">
     <div class="dashboard-toolbar">
       <button id="new-doc-btn" class="btn">+ New document</button>
     </div>
-    <div id="doc-list" class="doc-list"></div>
-    <div id="empty-state" class="empty-state" style="display: none">
+    <div id="doc-list-skeleton" class="doc-list" aria-hidden="true">
+      <div class="skeleton doc-item-skeleton"></div>
+      <div class="skeleton doc-item-skeleton"></div>
+      <div class="skeleton doc-item-skeleton"></div>
+    </div>
+    <div id="doc-list" class="doc-list" hidden></div>
+    <div id="empty-state" class="empty-state" hidden>
       No documents yet — create your first one above.
     </div>
   </main>

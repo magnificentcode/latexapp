@@ -44,6 +44,24 @@
   white-space: nowrap;
 }
 
+.editor-center-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.editor-center-toggle input {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
 /* The library's floating toolbar (shown while the answer box is focused)
    is `position: fixed; top: 0`, which would otherwise sit on top of and
    swallow clicks meant for our own header/Save/Compile buttons above it —
@@ -54,8 +72,15 @@
   top: var(--editor-header-height, 62px) !important;
 }
 
+body {
+  /* A visibly different tone from the writing surface below, so the
+     "page" the answer sits on reads as a distinct layer rather than
+     everything being the same flat white. */
+  background: var(--bg);
+}
+
 #rich-text-editor-root {
-  max-width: 780px;
+  max-width: 720px;
   /* Clears the header (measured, since it can wrap to two lines on
      narrow windows) plus the toolbar's own height when open. */
   margin-top: calc(var(--editor-header-height, 62px) + 90px);
@@ -65,12 +90,20 @@
   padding: 0 var(--space-4);
 }
 
-/* The library ships its own fallback-less styling for the answer box; this
-   just gives it a bit more breathing room and a document-like feel. */
+/* The answer box ships with no background of its own (transparent) and a
+   hardcoded #aaa border that ignores our tokens/dark mode entirely — give
+   it a real "paper on a desk" surface: a raised, bordered card distinct
+   from the page background, generous padding, no visible container
+   chrome beyond that. */
 #rich-text-editor-root [data-testid='rich-text-editor'] {
   min-height: 60vh;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  background: var(--surface-raised) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-8) !important;
+  font-size: 1.05rem;
+  line-height: 1.6;
 }
 
 .fallback-editor {
@@ -79,8 +112,72 @@
   font: 17px 'Times New Roman', serif;
 }
 
-[hidden] {
-  display: none !important;
+/* --- Reskin the Digabi editor's own chrome to match our tokens instead
+   of its hardcoded light-mode-only palette (#fff, #359bb7, #caedff,
+   #dfdfdf, ...), so it doesn't look like a pasted-in widget and actually
+   adapts under dark mode. --- */
+
+[data-testid='toolbar'] {
+  background: var(--surface) !important;
+  border-bottom: 1px solid var(--border) !important;
+  box-shadow: none !important;
+}
+
+[data-testid='toolbar'] button {
+  color: var(--text-secondary);
+}
+
+[data-testid='toolbar'] button:hover {
+  background: var(--accent-tint) !important;
+}
+
+/* "Σ Insert equation" and its container — the container has its own
+   hardcoded white background and stays in the DOM (empty) even while an
+   equation is open, so it needs the override too or it shows as a stray
+   white patch over our themed toolbar. */
+[data-testid='toolbar'] > div:first-child {
+  background: var(--surface) !important;
+}
+
+[data-testid='toolbar'] > div:first-child button {
+  color: var(--accent) !important;
+  font-family: var(--font-sans) !important;
+}
+
+[data-testid='math-toolbar'] {
+  background: var(--surface) !important;
+}
+
+[data-testid='math-toolbar']::before {
+  background: var(--surface) !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+.math-editor {
+  border-top-color: var(--accent) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.math-editor-equation-field,
+.math-editor-latex-field {
+  background: var(--surface-raised) !important;
+  color: var(--text) !important;
+}
+
+.math-editor-latex-field {
+  font-family: var(--font-mono) !important;
+}
+
+.math-editor-latex-field::placeholder {
+  color: var(--text-secondary);
+}
+
+img.equation.active {
+  border-color: var(--accent) !important;
+}
+
+[data-testid='rich-text-editor']:focus img.equation {
+  background-color: var(--accent-tint) !important;
 }
 
 .compile-panel {
@@ -116,6 +213,10 @@
 .compile-pdf-frame {
   flex: 1;
   border: none;
+  /* The PDF itself is always white paper — an iframe with a dark
+     surrounding page still needs a light frame background so it doesn't
+     flash dark before the PDF paints. */
+  background: #fff;
 }
 
 .compile-log {

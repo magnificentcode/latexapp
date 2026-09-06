@@ -13,6 +13,7 @@ class DocumentCreate(BaseModel):
 class DocumentUpdate(BaseModel):
     title: str | None = None
     content: str | None = None
+    center_text: bool | None = None
 
 
 class DocumentSummary(BaseModel):
@@ -25,5 +26,6 @@ class DocumentOut(BaseModel):
     id: uuid.UUID
     title: str
     content: str
+    center_text: bool
     created_at: datetime
     updated_at: datetime

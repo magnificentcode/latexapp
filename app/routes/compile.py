@@ -39,7 +39,7 @@ async def compile_document(
     document = await _get_owned_document(db, current_user, document_id)
 
     try:
-        pdf_bytes = await compile_latex(document.content)
+        pdf_bytes = await compile_latex(document.content, center=document.center_text)
     except CompileError as exc:
         return JSONResponse(
             status_code=422,
@@ -75,7 +75,7 @@ async def export_document(
 
     tmpdir = Path(tempfile.mkdtemp(prefix="latexapp_export_"))
     try:
-        tex_source = answer_html_to_tex(document.content, tmpdir)
+        tex_source = answer_html_to_tex(document.content, tmpdir, center=document.center_text)
         image_files = list(tmpdir.iterdir())
         base_name = _safe_filename(document.title)
 

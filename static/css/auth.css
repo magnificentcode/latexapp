@@ -16,6 +16,12 @@
   padding: var(--space-8) var(--space-6);
 }
 
+.auth-brand {
+  justify-content: center;
+  width: 100%;
+  margin-bottom: var(--space-6);
+}
+
 .auth-card h1 {
   font-size: var(--text-xl);
   margin: 0 0 var(--space-6);

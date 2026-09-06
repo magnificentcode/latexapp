@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Editor — latexapp</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
   <link rel="stylesheet" href="https://unpkg.com/mathquill@0.10.1/build/mathquill.css" />
   <link rel="stylesheet" href="/static/css/design-system.css" />
   <link rel="stylesheet" href="/static/css/editor.css" />
@@ -13,6 +14,10 @@
     <a href="/dashboard" class="editor-back">← Documents</a>
     <input type="text" id="title-input" class="editor-title-input" placeholder="Untitled" />
     <span id="save-status" class="editor-save-status">Loading…</span>
+    <label class="editor-center-toggle">
+      <input type="checkbox" id="center-toggle" checked />
+      Center PDF text
+    </label>
     <button id="save-btn" class="btn btn-secondary">Save</button>
     <button id="export-btn" class="btn btn-secondary">Export .tex</button>
     <button id="compile-btn" class="btn">Compile to PDF</button>

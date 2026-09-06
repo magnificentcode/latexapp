@@ -9,6 +9,7 @@ const titleInput = document.getElementById('title-input');
 const saveStatus = document.getElementById('save-status');
 const saveBtn = document.getElementById('save-btn');
 const exportBtn = document.getElementById('export-btn');
+const centerToggle = document.getElementById('center-toggle');
 const compileBtn = document.getElementById('compile-btn');
 const compilePanel = document.getElementById('compile-panel');
 const compilePanelTitle = document.getElementById('compile-panel-title');
@@ -56,7 +57,11 @@ async function saveDocument() {
   await fetchJson(`/api/documents/${documentId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title: titleInput.value, content: latestAnswer.answerHtml }),
+    body: JSON.stringify({
+      title: titleInput.value,
+      content: latestAnswer.answerHtml,
+      center_text: centerToggle.checked,
+    }),
   });
   saveStatus.textContent = 'Saved';
 }
@@ -77,6 +82,7 @@ exportBtn.addEventListener('click', async () => {
   window.location.href = `/api/documents/${documentId}/export`;
 });
 titleInput.addEventListener('input', scheduleAutosave);
+centerToggle.addEventListener('change', saveDocument);
 
 // The real exam answer sheet has no spellcheck/autocorrect/predictive-text —
 // the package hardcodes spellCheck={false} on the contenteditable itself,
@@ -154,6 +160,7 @@ function fallbackEditor() {
 
 function initEditor(doc) {
   titleInput.value = doc.title;
+  centerToggle.checked = doc.center_text;
   saveStatus.textContent = 'Saved';
   latestAnswer = { answerHtml: doc.content, answerText: '', imageCount: 0 };
 

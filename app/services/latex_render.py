@@ -40,7 +40,6 @@ _PREAMBLE = (
     # far better this way than with indented block paragraphs.
     "\\usepackage{parskip}\n"
     "\\begin{document}\n"
-    "\\centering\n"
 )
 _POSTAMBLE = "\n\\end{document}\n"
 
@@ -211,15 +210,21 @@ def _save_data_image(data_url: str, assets_dir: Path, index: int) -> str | None:
     return filename
 
 
-def answer_html_to_tex(answer_html: str, assets_dir: Path) -> str:
+def answer_html_to_tex(answer_html: str, assets_dir: Path, center: bool = True) -> str:
     """Renders a document's saved rich-text content into a full, compilable
     .tex source. Embedded equations (<img alt="latex">) become inline
-    `$latex$` math, or centered `\\[latex\\]` display math when the
-    equation sits alone on its own line; pasted screenshots (base64
-    <img src="data:...">) are decoded to files in `assets_dir` and
-    included via \\includegraphics.
+    `$latex$` math, or `\\[latex\\]` display math (always centered,
+    regardless of `center` — that's inherent to LaTeX's display-math
+    environment) when the equation sits alone on its own line; pasted
+    screenshots (base64 <img src="data:...">) are decoded to files in
+    `assets_dir` and included via \\includegraphics.
+
+    `center` controls only the surrounding body *text*: centered (the
+    default, matching how it looks in the editor) or left-aligned/
+    justified.
     """
     parser = _AnswerHtmlParser()
     parser.feed(answer_html or "")
     body = _render_tokens(parser.tokens, assets_dir) or "% (empty document)"
-    return _PREAMBLE + body + _POSTAMBLE
+    preamble = _PREAMBLE + ("\\centering\n" if center else "")
+    return preamble + body + _POSTAMBLE

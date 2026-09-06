@@ -3,13 +3,16 @@
 :root {
   color-scheme: light dark;
 
-  --bg: oklch(98.5% 0.004 250);
-  --surface: oklch(99.2% 0.003 250);
+  /* Three tiers, deliberately spaced apart for visible depth: --bg (page)
+     < --surface (header/toolbar/chrome) < --surface-raised (cards, the
+     writing surface, inputs). */
+  --bg: oklch(96% 0.006 250);
+  --surface: oklch(98.5% 0.004 250);
   --surface-raised: oklch(100% 0.002 250);
-  --border: oklch(90% 0.006 250);
-  --border-strong: oklch(80% 0.008 250);
-  --text: oklch(22% 0.014 250);
-  --text-secondary: oklch(46% 0.014 250);
+  --border: oklch(88% 0.008 250);
+  --border-strong: oklch(78% 0.01 250);
+  --text: oklch(20% 0.014 250);
+  --text-secondary: oklch(45% 0.014 250);
 
   --accent: oklch(48% 0.15 258);
   --accent-hover: oklch(42% 0.16 258);
@@ -42,8 +45,41 @@
   --shadow-md: 0 4px 12px oklch(20% 0.02 250 / 0.08);
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: oklch(15% 0.014 258);
+    --surface: oklch(19% 0.013 258);
+    --surface-raised: oklch(23% 0.012 258);
+    --border: oklch(32% 0.014 258);
+    --border-strong: oklch(42% 0.016 258);
+    --text: oklch(92% 0.006 258);
+    --text-secondary: oklch(68% 0.012 258);
+
+    /* Lighter than the light-mode accent on purpose — a mid-lightness
+       blue loses contrast against a dark background. */
+    --accent: oklch(72% 0.16 258);
+    --accent-hover: oklch(78% 0.15 258);
+    --accent-tint: oklch(28% 0.05 258);
+    --on-accent: oklch(14% 0.02 258);
+
+    --danger: oklch(70% 0.18 25);
+    --danger-tint: oklch(28% 0.06 25);
+
+    --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.4);
+    --shadow-md: 0 4px 14px oklch(0% 0 0 / 0.5);
+  }
+}
+
 * {
   box-sizing: border-box;
+}
+
+/* A component's own `display` rule (e.g. `.doc-list { display: flex }`)
+   has higher cascade priority than the UA stylesheet's `[hidden] {
+   display: none }`, so anything toggled via the `hidden` attribute needs
+   this to actually disappear. */
+[hidden] {
+  display: none !important;
 }
 
 body {
@@ -88,7 +124,7 @@ button {
 }
 
 .btn-secondary {
-  background: var(--surface);
+  background: var(--surface-raised);
   color: var(--text);
   border-color: var(--border);
 }
@@ -104,7 +140,7 @@ input[type='text'] {
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--surface-raised);
   color: var(--text);
   font-size: var(--text-base);
 }
@@ -112,4 +148,55 @@ input[type='text'] {
 input:focus {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
+}
+
+/* Brand mark: reused on auth pages and the dashboard header. Not shown on
+   the editor, which stays minimal and task-focused. */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 700;
+  font-size: var(--text-lg);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* Shimmering placeholder rows shown while a list is loading, instead of a
+   blank flash followed by content popping in. */
+.skeleton {
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    100deg,
+    var(--border) 30%,
+    var(--surface-raised) 50%,
+    var(--border) 70%
+  );
+  background-size: 250% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }

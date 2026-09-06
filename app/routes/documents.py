@@ -72,6 +72,8 @@ async def update_document(
         document.title = body.title
     if body.content is not None:
         document.content = body.content
+    if body.center_text is not None:
+        document.center_text = body.center_text
     await db.commit()
     await db.refresh(document)
     return document

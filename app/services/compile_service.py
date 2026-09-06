@@ -28,7 +28,7 @@ def _tail(log: str, max_chars: int = 4000) -> str:
     return log[-max_chars:]
 
 
-async def compile_latex(answer_html: str) -> bytes:
+async def compile_latex(answer_html: str, center: bool = True) -> bytes:
     """Compiles a document's saved rich-text content with tectonic in an
     isolated temp dir. The stored `answer_html` (text + <br> + <img>
     equations/screenshots, as saved by the rich-text editor) is first
@@ -41,7 +41,7 @@ async def compile_latex(answer_html: str) -> bytes:
     """
     tmpdir = Path(tempfile.mkdtemp(prefix="latexapp_compile_"))
     try:
-        tex_source = answer_html_to_tex(answer_html, tmpdir)
+        tex_source = answer_html_to_tex(answer_html, tmpdir, center=center)
         tex_path = tmpdir / "document.tex"
         tex_path.write_text(tex_source, encoding="utf-8")
 

@@ -7,15 +7,10 @@
   background: var(--surface);
 }
 
-.dashboard-header h1 {
-  font-size: var(--text-lg);
-  margin: 0;
-}
-
 .dashboard-main {
-  max-width: 720px;
+  max-width: 880px;
   margin: 0 auto;
-  padding: var(--space-8) var(--space-4);
+  padding: var(--space-8) var(--space-6);
 }
 
 .dashboard-toolbar {
@@ -33,18 +28,23 @@
 .doc-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: var(--space-2);
   padding: var(--space-4);
   background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  text-decoration: none;
-  color: var(--text);
   transition: border-color 0.15s ease;
 }
 
 .doc-item:hover {
   border-color: var(--border-strong);
+}
+
+.doc-item-link {
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
 }
 
 .doc-item .doc-title {
@@ -56,20 +56,36 @@
   color: var(--text-secondary);
 }
 
-.doc-item .doc-delete {
+.doc-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
   color: var(--text-secondary);
-  font-size: var(--text-sm);
   background: none;
   border: none;
-  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  transition: color 0.15s ease, background 0.15s ease;
 }
 
-.doc-item .doc-delete:hover {
+.doc-delete:hover {
   color: var(--danger);
+  background: var(--danger-tint);
+}
+
+.doc-delete-armed {
+  color: var(--on-accent);
+  background: var(--danger) !important;
 }
 
 .empty-state {
   text-align: center;
   color: var(--text-secondary);
   padding: var(--space-8) 0;
+}
+
+.doc-item-skeleton {
+  height: 60px;
 }
