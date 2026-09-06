@@ -8,6 +8,7 @@ if (!documentId) {
 const titleInput = document.getElementById('title-input');
 const saveStatus = document.getElementById('save-status');
 const saveBtn = document.getElementById('save-btn');
+const exportBtn = document.getElementById('export-btn');
 const compileBtn = document.getElementById('compile-btn');
 const compilePanel = document.getElementById('compile-panel');
 const compilePanelTitle = document.getElementById('compile-panel-title');
@@ -21,6 +22,21 @@ const editorRoot = document.getElementById('rich-text-editor-root');
 let latestAnswer = { answerHtml: '', answerText: '', imageCount: 0 };
 let autosaveTimer = null;
 let currentPdfUrl = null;
+
+// The header can wrap to two lines on narrow windows (title + 3 buttons
+// don't always fit one row) — editor.css reads this to keep the rich-text
+// editor's own floating toolbar (position:fixed) below the header instead
+// of a hardcoded pixel guess that breaks whenever the header's height
+// changes.
+const editorHeader = document.querySelector('.editor-header');
+function syncHeaderHeight() {
+  document.documentElement.style.setProperty(
+    '--editor-header-height',
+    `${editorHeader.getBoundingClientRect().height}px`
+  );
+}
+syncHeaderHeight();
+window.addEventListener('resize', syncHeaderHeight);
 
 async function fetchJson(url, options) {
   const response = await fetch(url, { credentials: 'include', ...options });
@@ -52,6 +68,14 @@ function scheduleAutosave() {
 }
 
 saveBtn.addEventListener('click', saveDocument);
+
+exportBtn.addEventListener('click', async () => {
+  await saveDocument();
+  // A plain navigation (not fetch+blob) so the browser handles the
+  // Content-Disposition: attachment response as a download on its own,
+  // without leaving the editor page.
+  window.location.href = `/api/documents/${documentId}/export`;
+});
 titleInput.addEventListener('input', scheduleAutosave);
 
 // The real exam answer sheet has no spellcheck/autocorrect/predictive-text —
