@@ -72,6 +72,51 @@ function scheduleAutosave() {
   autosaveTimer = setTimeout(saveDocument, AUTOSAVE_DELAY_MS);
 }
 
+// The editor is an HTML/CSS approximation of a totally different renderer
+// (the compiled PDF is real LaTeX typesetting) — it can never be pixel-
+// identical, but these two gaps were the most visibly misleading:
+// (1) centering wasn't reflected in the editor at all, and (2) an
+// equation alone on its own line compiles to large, centered *display*
+// math, but sat in the editor exactly as small as an inline equation.
+// Mirrors the same "standalone" test latex_render.py uses server-side,
+// applied live to the DOM instead of the saved HTML string.
+function getAnswerBox() {
+  return editorRoot.querySelector('[data-testid="rich-text-editor"]');
+}
+
+function isWhitespaceTextNode(node) {
+  return !!node && node.nodeType === Node.TEXT_NODE && node.textContent.trim() === '';
+}
+
+function prevSignificantSibling(node) {
+  let n = node.previousSibling;
+  while (isWhitespaceTextNode(n)) n = n.previousSibling;
+  return n;
+}
+
+function nextSignificantSibling(node) {
+  let n = node.nextSibling;
+  while (isWhitespaceTextNode(n)) n = n.nextSibling;
+  return n;
+}
+
+function isStandaloneEquation(img) {
+  const prev = prevSignificantSibling(img);
+  const next = nextSignificantSibling(img);
+  const prevOk = prev === null || prev.nodeName === 'BR';
+  const nextOk = next === null || next.nodeName === 'BR';
+  return prevOk && nextOk;
+}
+
+function syncPreviewFidelity() {
+  const answerBox = getAnswerBox();
+  if (!answerBox) return;
+  answerBox.style.textAlign = centerToggle.checked ? 'center' : '';
+  answerBox.querySelectorAll('img.equation').forEach((img) => {
+    img.classList.toggle('equation-display', isStandaloneEquation(img));
+  });
+}
+
 saveBtn.addEventListener('click', saveDocument);
 
 exportBtn.addEventListener('click', async () => {
@@ -82,7 +127,10 @@ exportBtn.addEventListener('click', async () => {
   window.location.href = `/api/documents/${documentId}/export`;
 });
 titleInput.addEventListener('input', scheduleAutosave);
-centerToggle.addEventListener('change', saveDocument);
+centerToggle.addEventListener('change', () => {
+  syncPreviewFidelity();
+  saveDocument();
+});
 
 // The real exam answer sheet has no spellcheck/autocorrect/predictive-text —
 // the package hardcodes spellCheck={false} on the contenteditable itself,
@@ -183,6 +231,7 @@ function initEditor(doc) {
       onValueChange: (answer) => {
         latestAnswer = answer;
         scheduleAutosave();
+        syncPreviewFidelity();
       },
       textAreaProps: { id: 'answer-editor' },
     });
@@ -205,6 +254,21 @@ function initEditor(doc) {
       });
       observer.observe(editorRoot, { childList: true, subtree: true });
     }
+
+    // Loading `initialValue` isn't synchronous: the box itself mounts via
+    // React first (empty), then a later effect sets its innerHTML, then
+    // ANOTHER effect swaps the raw <img>s for "live" equation images with
+    // the `equation` class — a one-shot check right after the box first
+    // appears runs before any of that content exists. Keep watching
+    // (childList/subtree only, so our own class/style-only sync doesn't
+    // re-trigger itself) and debounce, so every content change — initial
+    // load included — gets picked up once it actually lands.
+    let fidelitySyncTimer = null;
+    const fidelityObserver = new MutationObserver(() => {
+      clearTimeout(fidelitySyncTimer);
+      fidelitySyncTimer = setTimeout(syncPreviewFidelity, 30);
+    });
+    fidelityObserver.observe(editorRoot, { childList: true, subtree: true });
   } catch (err) {
     console.error('Rich text editor init failed:', err);
     fallbackEditor();

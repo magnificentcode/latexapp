@@ -112,6 +112,34 @@ body {
   font: 17px 'Times New Roman', serif;
 }
 
+/* --- Closing the two biggest editor-vs-PDF gaps (the editor is an HTML
+   approximation of a completely different, real LaTeX render — this
+   can't be pixel-identical, but these two were actively misleading). --- */
+
+/* 1. An equation alone on its own line compiles to large, centered
+   *display* math (editor.js's isStandaloneEquation mirrors the same
+   test latex_render.py uses server-side) — style it that way here too,
+   instead of leaving it exactly as small as an inline equation. */
+[data-testid='rich-text-editor'] img.equation.equation-display {
+  display: block;
+  margin: 0.9em auto;
+  transform: scale(1.6);
+}
+
+/* 2. A run of 2+ manual line breaks compiles to a single, modest
+   paragraph gap (parskip), not N stacked full-height blank lines. Only
+   the *second and later* <br> in a run match `br + br`; giving those a
+   small fixed block margin instead of another full inline line advance
+   keeps a "few extra Enters" from ballooning into far more empty space
+   than the PDF will actually have. (An occasional 3rd+ break in the same
+   run adds a little more than the PDF will, but that's the accepted
+   trade-off of a CSS approximation rather than a real shared renderer.) */
+[data-testid='rich-text-editor'] br + br {
+  display: block;
+  content: '';
+  margin-top: 0.6em;
+}
+
 /* --- Reskin the Digabi editor's own chrome to match our tokens instead
    of its hardcoded light-mode-only palette (#fff, #359bb7, #caedff,
    #dfdfdf, ...), so it doesn't look like a pasted-in widget and actually
