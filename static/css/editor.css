@@ -79,29 +79,38 @@ body {
   background: var(--bg);
 }
 
+/* Inspired by matikkaeditori.fi's editor: a flat, full-bleed writing
+   surface (no floating card with margins on every side) — a tinted
+   header flowing directly into a plain white/raised page, distinguished
+   by background color and a single top divider rather than a shadowed
+   box sitting in open space. */
 #rich-text-editor-root {
-  max-width: 720px;
-  /* Clears the header (measured, since it can wrap to two lines on
-     narrow windows) plus the toolbar's own height when open. */
-  margin-top: calc(var(--editor-header-height, 62px) + 90px);
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: var(--space-8);
-  padding: 0 var(--space-4);
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+/* The library's floating toolbar needs room to open above the content
+   without covering it — extra top padding covers that; the writing
+   surface itself still starts right below the header, no visible gap. */
+#rich-text-editor-root::before {
+  content: '';
+  display: block;
+  height: calc(var(--editor-header-height, 62px) + var(--space-6));
 }
 
 /* The answer box ships with no background of its own (transparent) and a
    hardcoded #aaa border that ignores our tokens/dark mode entirely — give
-   it a real "paper on a desk" surface: a raised, bordered card distinct
-   from the page background, generous padding, no visible container
-   chrome beyond that. */
+   it a plain document surface: a flat background distinct from the page
+   behind it, a single top divider, no shadow/rounded "card" framing. */
 #rich-text-editor-root [data-testid='rich-text-editor'] {
-  min-height: 60vh;
+  min-height: 70vh;
   background: var(--surface-raised) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  padding: var(--space-8) !important;
+  border: none !important;
+  border-top: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: var(--space-8) var(--space-6) !important;
   font-size: 1.05rem;
   line-height: 1.6;
 }
