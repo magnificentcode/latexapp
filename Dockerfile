@@ -11,9 +11,11 @@ RUN mkdir -p /var/cache/latexapp
 # runtime package is version-numbered per Debian release (e.g. libicu72 on
 # bookworm), so libicu-dev is used here instead of guessing the exact
 # number; it pulls in whatever runtime .so the base image's release needs.
+# poppler-utils (pdftocairo) converts a compiled equation-preview PDF to
+# SVG for the editor's live math preview — see app/services/math_preview.py.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential libffi-dev libssl-dev python3-dev gcc \
-    curl ca-certificates \
+    curl ca-certificates poppler-utils \
     libfontconfig1 libfreetype6 libgraphite2-3 libharfbuzz0b libpng16-16 libicu-dev zlib1g \
     && rm -rf /var/lib/apt/lists/*
 
@@ -46,6 +48,14 @@ RUN mkdir -p /tmp/warmup && \
       '\end{document}' \
       > /tmp/warmup/warmup.tex && \
     tectonic --outdir /tmp/warmup /tmp/warmup/warmup.tex && \
+    printf '%s\n' \
+      '\documentclass[preview,border=1pt]{standalone}' \
+      '\usepackage{amsmath,amssymb}' \
+      '\begin{document}' \
+      '$\begin{cases} x & y \end{cases}$' \
+      '\end{document}' \
+      > /tmp/warmup/warmup2.tex && \
+    tectonic --outdir /tmp/warmup /tmp/warmup/warmup2.tex && \
     rm -rf /tmp/warmup
 
 COPY requirements.txt .

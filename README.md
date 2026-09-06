@@ -8,7 +8,7 @@ matriculation exam system, and compile to a real PDF on demand.
 
 - **Backend**: FastAPI, SQLAlchemy (async) + asyncpg against Railway Postgres, own email/password auth (bcrypt + JWT in an httpOnly cookie).
 - **Editor**: [Digabi's `rich-text-editor`](https://github.com/digabi/rich-text-editor) (loaded from its CDN bundle, same as it's used in Abibotti) — a contenteditable answer area with an equation editor (MathQuill + raw LaTeX side by side), a special-character toolbar, its own undo/redo, and clipboard image paste. No frontend build step: it's a `<script type="module">` tag plus a small vanilla-JS file ([static/js/editor.js](static/js/editor.js)) that wires it to the API.
-- **Math preview**: equations render inline as SVG via matplotlib's mathtext (`/math.svg`, ported from Abibotti) as you type — no LaTeX install needed for that.
+- **Math preview**: equations render inline as SVG via the real LaTeX engine ([app/services/math_preview.py](app/services/math_preview.py) — tectonic compiles a tiny `standalone`-class document, `pdftocairo` converts it to SVG), debounced client-side so fast typing doesn't queue up a flood of compiles. Handles anything real LaTeX does and matches the final PDF's math exactly, unlike a simplified client-side approximation.
 - **Compile**: on "Compile to PDF", the saved rich-text content is converted into real LaTeX source ([app/services/latex_render.py](app/services/latex_render.py) — text escaped, `<br>` → line breaks, equation `<img>`s → `$...$`, pasted images → `\includegraphics`) and compiled with [tectonic](https://tectonic-typesetting.github.io/), a self-contained LaTeX engine, per-request in an isolated temp dir.
 
 ## Local development
@@ -16,7 +16,7 @@ matriculation exam system, and compile to a real PDF on demand.
 Prerequisites:
 
 ```bash
-brew install tectonic postgresql@16
+brew install tectonic postgresql@16 poppler
 ```
 
 Backend (no Node/npm needed — the editor loads from a CDN at runtime):

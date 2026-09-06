@@ -49,6 +49,11 @@ async def compile_latex(answer_html: str, center: bool = True) -> bytes:
             "tectonic",
             "--outdir",
             str(tmpdir),
+            # The document's LaTeX source embeds equation LaTeX the user
+            # typed directly (unescaped, inside $...$/\[...\]) — treat it
+            # as untrusted input rather than trusting the engine with
+            # shell-escape or arbitrary absolute-path file access.
+            "--untrusted",
             str(tex_path),
             cwd=str(tmpdir),
             stdout=asyncio.subprocess.PIPE,

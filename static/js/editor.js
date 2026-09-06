@@ -195,6 +195,28 @@ function watchForEnglishRelabeling() {
   observer.observe(document.body, { childList: true, subtree: true });
 }
 
+// The equation preview now compiles through the real LaTeX engine (so it
+// handles anything real LaTeX does, and matches the final PDF exactly —
+// see app/services/math_preview.py), which takes a couple hundred ms
+// even warm, unlike the instant client-side approximation this replaced.
+// The library updates the preview <img> on every single keystroke while
+// an equation is open, so without debouncing, fast typing would queue up
+// a flood of overlapping compiles. Debounce the actual image update;
+// `data-latex` itself is still set immediately by the library regardless
+// of this callback, so Save/Compile always see the latest LaTeX even if
+// the visual preview lags slightly behind.
+const equationPreviewTimers = new WeakMap();
+const EQUATION_PREVIEW_DEBOUNCE_MS = 400;
+
+function debouncedEquationPreview(img, latex) {
+  clearTimeout(equationPreviewTimers.get(img));
+  const timer = setTimeout(() => {
+    img.setAttribute('src', `/math.svg?latex=${encodeURIComponent(latex)}`);
+    img.setAttribute('alt', latex);
+  }, EQUATION_PREVIEW_DEBOUNCE_MS);
+  equationPreviewTimers.set(img, timer);
+}
+
 function fallbackEditor() {
   editorRoot.innerHTML =
     '<div id="answer-editor" contenteditable="true" class="fallback-editor" style="min-height:60vh;padding:1.5rem 2rem;"></div>';
@@ -227,6 +249,7 @@ function initEditor(doc) {
       // nonexistent host instead of hitting our own /math.svg route.
       baseUrl: '',
       allowedFileTypes: ['image/png', 'image/jpeg'],
+      onLatexUpdate: debouncedEquationPreview,
       initialValue: doc.content,
       onValueChange: (answer) => {
         latestAnswer = answer;
