@@ -39,6 +39,13 @@ _PREAMBLE = (
     # (short lines, occasional blank-line breaks between problems) reads
     # far better this way than with indented block paragraphs.
     "\\usepackage{parskip}\n"
+    # Page number top-right instead of article's default bottom-center;
+    # no header rule for a clean, minimal look.
+    "\\usepackage{fancyhdr}\n"
+    "\\pagestyle{fancy}\n"
+    "\\fancyhf{}\n"
+    "\\fancyhead[R]{\\thepage}\n"
+    "\\renewcommand{\\headrulewidth}{0pt}\n"
     "\\begin{document}\n"
 )
 _POSTAMBLE = "\n\\end{document}\n"
