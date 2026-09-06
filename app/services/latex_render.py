@@ -40,6 +40,7 @@ _PREAMBLE = (
     # far better this way than with indented block paragraphs.
     "\\usepackage{parskip}\n"
     "\\begin{document}\n"
+    "\\centering\n"
 )
 _POSTAMBLE = "\n\\end{document}\n"
 
