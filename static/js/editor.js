@@ -39,6 +39,85 @@ function syncHeaderHeight() {
 syncHeaderHeight();
 window.addEventListener('resize', syncHeaderHeight);
 
+// The rich-text editor's own undo/redo shortcuts only check
+// `event.ctrlKey`, never `event.metaKey` — so on a Mac, Cmd+Z/Cmd+Y do
+// two things at once: a separate handler (which *does* check metaKey)
+// calls preventDefault() to block the browser's native contenteditable
+// undo, but the actual custom-undo handler never fires because it's
+// gated on ctrlKey. Net effect: Cmd+Z does nothing on Mac, and testing
+// showed the browser's own native undo isn't a reliable fallback either
+// (contenteditable undo behavior is notoriously inconsistent across
+// browsers). Rather than depend on either, this keeps its own simple
+// undo/redo stack of full answerHtml snapshots and replays them through
+// the library's own officially-exposed `setValue()` — independent of
+// both the library's broken shortcut and any browser's native undo.
+const MAX_HISTORY_ENTRIES = 100;
+const HISTORY_DEBOUNCE_MS = 500;
+let historyStack = [];
+let historyIndex = -1;
+let historyDebounceTimer = null;
+let richTextEditorRef = null; // the ref returned by window.makeRichText(), once available
+
+function resetHistory(html) {
+  historyStack = [html];
+  historyIndex = 0;
+}
+
+function pushHistory(html) {
+  if (historyStack[historyIndex] === html) return;
+  historyStack = historyStack.slice(0, historyIndex + 1);
+  historyStack.push(html);
+  if (historyStack.length > MAX_HISTORY_ENTRIES) historyStack.shift();
+  historyIndex = historyStack.length - 1;
+}
+
+function scheduleHistoryPush(html) {
+  clearTimeout(historyDebounceTimer);
+  historyDebounceTimer = setTimeout(() => pushHistory(html), HISTORY_DEBOUNCE_MS);
+}
+
+function applyHistoryEntry(html) {
+  if (!richTextEditorRef || !richTextEditorRef.current) return;
+  richTextEditorRef.current.setValue(html);
+  latestAnswer = { ...latestAnswer, answerHtml: html };
+  syncPreviewFidelity();
+  scheduleAutosave();
+}
+
+function undo() {
+  clearTimeout(historyDebounceTimer);
+  if (historyIndex <= 0) return;
+  historyIndex -= 1;
+  applyHistoryEntry(historyStack[historyIndex]);
+}
+
+function redo() {
+  if (historyIndex >= historyStack.length - 1) return;
+  historyIndex += 1;
+  applyHistoryEntry(historyStack[historyIndex]);
+}
+
+window.addEventListener(
+  'keydown',
+  (event) => {
+    if (!event.metaKey) return;
+    const key = event.key.toLowerCase();
+    if (key !== 'z' && key !== 'y') return;
+    const box = getAnswerBox();
+    if (!box || !box.contains(document.activeElement)) return;
+    // Stop the library's own broken handlers from running at all (see
+    // above), and drive our own stack instead of the browser's default.
+    event.stopImmediatePropagation();
+    event.preventDefault();
+    if (key === 'y' || (key === 'z' && event.shiftKey)) {
+      redo();
+    } else {
+      undo();
+    }
+  },
+  true
+);
+
 async function fetchJson(url, options) {
   const response = await fetch(url, { credentials: 'include', ...options });
   if (response.status === 401) {
@@ -233,6 +312,7 @@ function initEditor(doc) {
   centerToggle.checked = doc.center_text;
   saveStatus.textContent = 'Saved';
   latestAnswer = { answerHtml: doc.content, answerText: '', imageCount: 0 };
+  resetHistory(doc.content);
 
   if (typeof window.makeRichText !== 'function') {
     fallbackEditor();
@@ -240,7 +320,7 @@ function initEditor(doc) {
   }
 
   try {
-    window.makeRichText({
+    richTextEditorRef = window.makeRichText({
       container: editorRoot,
       language: 'FI',
       // '' (not '/') matters: the package builds the equation image URL
@@ -255,6 +335,7 @@ function initEditor(doc) {
         latestAnswer = answer;
         scheduleAutosave();
         syncPreviewFidelity();
+        scheduleHistoryPush(answer.answerHtml);
       },
       textAreaProps: { id: 'answer-editor' },
     });
