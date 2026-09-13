@@ -8,7 +8,9 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import RATE_LIMIT_LOGIN_PER_MINUTE, RATE_LIMIT_SIGNUP_PER_HOUR
 from app.core.deps import get_current_user
+from app.core.rate_limit import check_rate_limit, client_ip
 from app.core.security import create_access_token, hash_password, verify_password
 from app.db.models import User
 from app.db.session import get_db
@@ -34,6 +36,7 @@ def _set_auth_cookie(response: Response, request: Request, token: str, max_age: 
 
 @router.post("/signup", status_code=201, response_model=UserOut)
 async def signup(request: Request, response: Response, db: AsyncSession = Depends(get_db)):
+    check_rate_limit(f"signup:{client_ip(request)}", RATE_LIMIT_SIGNUP_PER_HOUR, 3600)
     try:
         credentials = UserCredentials(**await request.json())
     except (ValidationError, ValueError) as exc:
@@ -56,6 +59,7 @@ async def signup(request: Request, response: Response, db: AsyncSession = Depend
 
 @router.post("/login", response_model=UserOut)
 async def login(request: Request, response: Response, db: AsyncSession = Depends(get_db)):
+    check_rate_limit(f"login:{client_ip(request)}", RATE_LIMIT_LOGIN_PER_MINUTE, 60)
     try:
         credentials = UserCredentials(**await request.json())
     except (ValidationError, ValueError):

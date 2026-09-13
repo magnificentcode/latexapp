@@ -13,8 +13,9 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import TECTONIC_TIMEOUT_SECONDS
+from app.core.config import RATE_LIMIT_COMPILE_PER_MINUTE, TECTONIC_TIMEOUT_SECONDS
 from app.core.deps import get_current_user
+from app.core.rate_limit import check_rate_limit
 from app.db.models import User
 from app.db.session import get_db
 from app.routes.documents import _get_owned_document
@@ -36,6 +37,7 @@ async def compile_document(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    check_rate_limit(f"compile:{current_user.id}", RATE_LIMIT_COMPILE_PER_MINUTE, 60)
     document = await _get_owned_document(db, current_user, document_id)
 
     try:

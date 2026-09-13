@@ -27,3 +27,12 @@ ALLOWED_ORIGINS = [
 TECTONIC_TIMEOUT_SECONDS = int(os.getenv("TECTONIC_TIMEOUT_SECONDS", "45"))
 
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
+# Rate limits (see app/core/rate_limit.py). Login/signup are keyed by client
+# IP since there's no account yet to key on; compile is keyed by user id
+# since it's already authenticated and IP is a weaker signal (shared
+# networks, proxies) for what's really a per-account resource cost (each
+# call spawns a tectonic subprocess).
+RATE_LIMIT_LOGIN_PER_MINUTE = int(os.getenv("RATE_LIMIT_LOGIN_PER_MINUTE", "10"))
+RATE_LIMIT_SIGNUP_PER_HOUR = int(os.getenv("RATE_LIMIT_SIGNUP_PER_HOUR", "5"))
+RATE_LIMIT_COMPILE_PER_MINUTE = int(os.getenv("RATE_LIMIT_COMPILE_PER_MINUTE", "6"))
