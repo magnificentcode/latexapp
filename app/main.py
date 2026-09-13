@@ -18,13 +18,22 @@ logger = logging.getLogger("latexapp")
 
 app = FastAPI(title="latexapp", description="Personal LaTeX editor", version="1.0.0")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS or ["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Only mount CORS when an explicit allowlist is configured. With
+# allow_credentials=True, Starlette's CORSMiddleware reflects the request's
+# actual Origin header instead of a literal "*" (browsers reject wildcard
+# origin + credentials otherwise) — falling back to ["*"] here would silently
+# let any website make authenticated requests using the visitor's session
+# cookie. The app is served same-origin (see README), so no CORS at all is
+# the correct default; set ALLOWED_ORIGINS only if a separate frontend
+# origin genuinely needs credentialed cross-origin access.
+if ALLOWED_ORIGINS:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=ALLOWED_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "..", "static")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
