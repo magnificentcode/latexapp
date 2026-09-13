@@ -44,6 +44,11 @@
   white-space: nowrap;
 }
 
+.editor-save-status.editor-save-status-error {
+  color: var(--danger);
+  white-space: normal;
+}
+
 .editor-center-toggle {
   display: inline-flex;
   align-items: center;

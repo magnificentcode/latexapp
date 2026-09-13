@@ -127,26 +127,76 @@ async function fetchJson(url, options) {
   return response;
 }
 
+// FastAPI's own validation errors (e.g. the document-content size limit)
+// come back as `{detail: [{msg: "..."}]}`, not a plain string like the
+// hand-written HTTPException details elsewhere in this app use — normalize
+// both shapes into one message so the status line can show either.
+function extractErrorMessage(data, fallback) {
+  const detail = data && data.detail;
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    const messages = detail.map((item) => item && item.msg).filter(Boolean);
+    if (messages.length) return messages.join(' ');
+  }
+  return fallback;
+}
+
+function showSaveError(message) {
+  saveStatus.textContent = message;
+  saveStatus.classList.add('editor-save-status-error');
+}
+
+function clearSaveError() {
+  saveStatus.classList.remove('editor-save-status-error');
+}
+
+// Returns true on success, false on failure — callers that must not
+// compile/export a version the server never actually saved check this
+// before proceeding.
 async function saveDocument() {
   if (autosaveTimer) {
     clearTimeout(autosaveTimer);
     autosaveTimer = null;
   }
+  clearSaveError();
   saveStatus.textContent = 'Saving…';
-  await fetchJson(`/api/documents/${documentId}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      title: titleInput.value,
-      content: latestAnswer.answerHtml,
-      center_text: centerToggle.checked,
-    }),
-  });
+
+  let response;
+  try {
+    response = await fetchJson(`/api/documents/${documentId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: titleInput.value,
+        content: latestAnswer.answerHtml,
+        center_text: centerToggle.checked,
+      }),
+    });
+  } catch (err) {
+    // fetchJson already redirects to /login for 401 — any other throw
+    // here means the request never reached the server at all.
+    if (err.message === 'Not authenticated') return false;
+    showSaveError('Save failed — check your connection. Click Save to retry.');
+    return false;
+  }
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    const fallback =
+      response.status === 422
+        ? 'Save failed: document is too large.'
+        : `Save failed (${response.status}). Click Save to retry.`;
+    showSaveError(extractErrorMessage(data, fallback));
+    return false;
+  }
+
   saveStatus.textContent = 'Saved';
+  return true;
 }
 
 function scheduleAutosave() {
   if (autosaveTimer) clearTimeout(autosaveTimer);
+  clearSaveError();
   saveStatus.textContent = 'Editing…';
   autosaveTimer = setTimeout(saveDocument, AUTOSAVE_DELAY_MS);
 }
@@ -199,7 +249,8 @@ function syncPreviewFidelity() {
 saveBtn.addEventListener('click', saveDocument);
 
 exportBtn.addEventListener('click', async () => {
-  await saveDocument();
+  const saved = await saveDocument();
+  if (!saved) return; // status line already shows why; don't export a stale/unsaved version
   // A plain navigation (not fetch+blob) so the browser handles the
   // Content-Disposition: attachment response as a download on its own,
   // without leaving the editor page.
@@ -393,7 +444,8 @@ function closeCompilePanel() {
 compileCloseBtn.addEventListener('click', closeCompilePanel);
 
 compileBtn.addEventListener('click', async () => {
-  await saveDocument();
+  const saved = await saveDocument();
+  if (!saved) return; // status line already shows why; don't compile a stale/unsaved version
 
   compileBtn.disabled = true;
   compileBtn.textContent = 'Compiling…';

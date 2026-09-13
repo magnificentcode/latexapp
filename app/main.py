@@ -3,8 +3,11 @@
 import logging
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import ALLOWED_ORIGINS
@@ -41,6 +44,18 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 # Starlette runs last-added middleware outermost, so AuthMiddleware (added
 # here) wraps every request, including the page-serving catch-all below.
 app.add_middleware(AuthMiddleware)
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    # FastAPI's default handler echoes the rejected value back in each
+    # error's "input" field. That's fine for a typo'd email, but the
+    # document-content size-limit validator (see app/models/document.py)
+    # can reject a payload tens of megabytes large — echoing it back would
+    # turn a 10MB "too big to save" request into a 10MB+ response too,
+    # doubling the bandwidth wasted on the exact request being rejected.
+    errors = [{k: v for k, v in error.items() if k != "input"} for error in exc.errors()]
+    return JSONResponse(status_code=422, content=jsonable_encoder({"detail": errors}))
+
 
 app.include_router(health.router)
 app.include_router(auth.router)
