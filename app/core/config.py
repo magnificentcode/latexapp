@@ -36,3 +36,12 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 RATE_LIMIT_LOGIN_PER_MINUTE = int(os.getenv("RATE_LIMIT_LOGIN_PER_MINUTE", "10"))
 RATE_LIMIT_SIGNUP_PER_HOUR = int(os.getenv("RATE_LIMIT_SIGNUP_PER_HOUR", "5"))
 RATE_LIMIT_COMPILE_PER_MINUTE = int(os.getenv("RATE_LIMIT_COMPILE_PER_MINUTE", "6"))
+
+# Documents are stored as a Postgres Text column (no DB-level cap), and
+# pasted screenshots live inline as base64 data: URLs inside that same
+# string (see README's known limitations) — without an application-level
+# ceiling, one huge save would bloat the row indefinitely and slow every
+# later compile. 10MB covers a genuinely long document with several
+# pasted screenshots; anything past that is almost certainly accidental
+# (e.g. a giant uncompressed paste).
+MAX_DOCUMENT_CONTENT_BYTES = int(os.getenv("MAX_DOCUMENT_CONTENT_BYTES", str(10 * 1024 * 1024)))
