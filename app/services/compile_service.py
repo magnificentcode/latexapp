@@ -6,7 +6,12 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from app.core.config import TECTONIC_TIMEOUT_SECONDS
+from app.core.concurrency import BusyError, run_bounded
+from app.core.config import (
+    COMPILE_QUEUE_TIMEOUT_SECONDS,
+    MAX_CONCURRENT_COMPILES,
+    TECTONIC_TIMEOUT_SECONDS,
+)
 from app.services.latex_render import answer_html_to_tex
 
 logger = logging.getLogger("latexapp.compile")
@@ -22,10 +27,19 @@ class CompileTimeout(Exception):
     pass
 
 
+class CompileBusy(Exception):
+    """Raised when no compile slot freed up within COMPILE_QUEUE_TIMEOUT_SECONDS."""
+
+
 def _tail(log: str, max_chars: int = 4000) -> str:
     # tectonic's actual error ("! ..." lines) is near the bottom; the top
     # is package-fetch chatter that isn't useful to the user.
     return log[-max_chars:]
+
+
+# Caps how many tectonic subprocesses run at once (see
+# MAX_CONCURRENT_COMPILES in app/core/config.py for why).
+_compile_semaphore = asyncio.Semaphore(MAX_CONCURRENT_COMPILES)
 
 
 async def compile_latex(answer_html: str, center: bool = True) -> bytes:
@@ -37,44 +51,53 @@ async def compile_latex(answer_html: str, center: bool = True) -> bytes:
 
     Returns PDF bytes on success. Raises CompileError (with tectonic's log
     attached) on a LaTeX-level failure, CompileTimeout if it runs past
-    TECTONIC_TIMEOUT_SECONDS.
+    TECTONIC_TIMEOUT_SECONDS, or CompileBusy if MAX_CONCURRENT_COMPILES
+    compiles are already running and none freed up within
+    COMPILE_QUEUE_TIMEOUT_SECONDS.
     """
-    tmpdir = Path(tempfile.mkdtemp(prefix="latexapp_compile_"))
-    try:
-        tex_source = answer_html_to_tex(answer_html, tmpdir, center=center)
-        tex_path = tmpdir / "document.tex"
-        tex_path.write_text(tex_source, encoding="utf-8")
 
-        proc = await asyncio.create_subprocess_exec(
-            "tectonic",
-            "--outdir",
-            str(tmpdir),
-            # The document's LaTeX source embeds equation LaTeX the user
-            # typed directly (unescaped, inside $...$/\[...\]) — treat it
-            # as untrusted input rather than trusting the engine with
-            # shell-escape or arbitrary absolute-path file access.
-            "--untrusted",
-            str(tex_path),
-            cwd=str(tmpdir),
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
+    async def _run() -> bytes:
+        tmpdir = Path(tempfile.mkdtemp(prefix="latexapp_compile_"))
         try:
-            stdout, stderr = await asyncio.wait_for(
-                proc.communicate(), timeout=TECTONIC_TIMEOUT_SECONDS
+            tex_source = answer_html_to_tex(answer_html, tmpdir, center=center)
+            tex_path = tmpdir / "document.tex"
+            tex_path.write_text(tex_source, encoding="utf-8")
+
+            proc = await asyncio.create_subprocess_exec(
+                "tectonic",
+                "--outdir",
+                str(tmpdir),
+                # The document's LaTeX source embeds equation LaTeX the user
+                # typed directly (unescaped, inside $...$/\[...\]) — treat it
+                # as untrusted input rather than trusting the engine with
+                # shell-escape or arbitrary absolute-path file access.
+                "--untrusted",
+                str(tex_path),
+                cwd=str(tmpdir),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
             )
-        except asyncio.TimeoutError:
-            proc.kill()
-            await proc.wait()
-            raise CompileTimeout()
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    proc.communicate(), timeout=TECTONIC_TIMEOUT_SECONDS
+                )
+            except asyncio.TimeoutError:
+                proc.kill()
+                await proc.wait()
+                raise CompileTimeout()
 
-        pdf_path = tmpdir / "document.pdf"
-        if proc.returncode != 0 or not pdf_path.exists():
-            log = (
-                stdout.decode(errors="replace") + "\n" + stderr.decode(errors="replace")
-            ).strip()
-            raise CompileError("LaTeX compile failed", log=_tail(log))
+            pdf_path = tmpdir / "document.pdf"
+            if proc.returncode != 0 or not pdf_path.exists():
+                log = (
+                    stdout.decode(errors="replace") + "\n" + stderr.decode(errors="replace")
+                ).strip()
+                raise CompileError("LaTeX compile failed", log=_tail(log))
 
-        return pdf_path.read_bytes()
-    finally:
-        shutil.rmtree(tmpdir, ignore_errors=True)
+            return pdf_path.read_bytes()
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
+    try:
+        return await run_bounded(_compile_semaphore, COMPILE_QUEUE_TIMEOUT_SECONDS, _run)
+    except BusyError:
+        raise CompileBusy()

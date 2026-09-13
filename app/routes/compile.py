@@ -19,7 +19,7 @@ from app.core.rate_limit import check_rate_limit
 from app.db.models import User
 from app.db.session import get_db
 from app.routes.documents import _get_owned_document
-from app.services.compile_service import CompileError, CompileTimeout, compile_latex
+from app.services.compile_service import CompileBusy, CompileError, CompileTimeout, compile_latex
 from app.services.latex_render import answer_html_to_tex
 
 logger = logging.getLogger("latexapp.compile")
@@ -50,6 +50,11 @@ async def compile_document(
     except CompileTimeout:
         raise HTTPException(
             status_code=504, detail=f"Compile timed out after {TECTONIC_TIMEOUT_SECONDS}s"
+        )
+    except CompileBusy:
+        raise HTTPException(
+            status_code=503,
+            detail="Server is busy compiling other documents. Please try again shortly.",
         )
     except FileNotFoundError:
         logger.error("tectonic binary not found on PATH")

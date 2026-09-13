@@ -45,3 +45,11 @@ RATE_LIMIT_COMPILE_PER_MINUTE = int(os.getenv("RATE_LIMIT_COMPILE_PER_MINUTE", "
 # pasted screenshots; anything past that is almost certainly accidental
 # (e.g. a giant uncompressed paste).
 MAX_DOCUMENT_CONTENT_BYTES = int(os.getenv("MAX_DOCUMENT_CONTENT_BYTES", str(10 * 1024 * 1024)))
+
+# Caps how many tectonic subprocesses (real, CPU-bound LaTeX compiles) run
+# at once on this app's single Railway container — signup being open means
+# multiple accounts could otherwise all hit Compile at the same moment and
+# pile up. A request that can't get a slot within COMPILE_QUEUE_TIMEOUT_SECONDS
+# fails with a "server busy" error rather than queueing indefinitely.
+MAX_CONCURRENT_COMPILES = int(os.getenv("MAX_CONCURRENT_COMPILES", "2"))
+COMPILE_QUEUE_TIMEOUT_SECONDS = int(os.getenv("COMPILE_QUEUE_TIMEOUT_SECONDS", "30"))
